@@ -1,4 +1,5 @@
 #include<systemc.h>
+#include<math.h>
 
 SC_MODULE(Counter){
 	//inputs
@@ -13,7 +14,7 @@ SC_MODULE(Counter){
 	sc_out<bool> unf_intr;
 
 	//variables
-	sc_uint<17> count;
+     sc_uint<17> count;
 
 
 
@@ -29,25 +30,38 @@ SC_MODULE(Counter){
 		else{
 			if(count_en.read()==true){
 				if(ud_ctrl.read()==true){
-					count = (count+1);
 					cout << "Up Counter: \n";
+					if(count == (pow(2,17)-1))
+					{
+						ovf_intr.write(true);
+						count=0;
+					}
+					else
+					{
+						count +=1;
+						ovf_intr.write(false);
+					}
 					count_out.write(count);
-					ovf_intr.write(count == 0 ? true :false);
-					unf_intr.write(false);
 				}
 				else{
-					count = (count-1);
 					cout << "Down Counter: \n";
+					if(count==0)
+					{
+						unf_intr.write(true);
+						count = (pow(2,17)-1);
+					}
+					else
+					{
+						count -= 1;
+						unf_intr.write(false);
+					}
 					count_out.write(count);
-					ovf_intr.write(false);
-					unf_intr.write(count == (1<<17)-1 ? true : false);
-
 				}
 
 			}
 		}
-		count_out = count;
-		cout << sc_time_stamp();
+
+		cout << "\n\n" << sc_time_stamp();
 		cout <<"Count:" << count <<"\n";
 		cout <<"Count:" << count_out <<"\n";
 		cout <<"Overflow:"<< ovf_intr << "\n";
@@ -56,7 +70,7 @@ SC_MODULE(Counter){
 
 	SC_CTOR(Counter){
 			SC_METHOD(UpDowncounter);
-			sensitive << clk.pos();
-		}
+			sensitive << clk.neg();
+	}
 
 };
